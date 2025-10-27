@@ -3,22 +3,125 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Prueba de Web Speech API</title>
+    <title>Dictado a Texto</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        textarea { width: 100%; height: 150px; margin-top: 10px; }
-        button { padding: 10px; font-size: 16px; margin: 5px; }
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap');
+
+        body {
+            font-family: 'Roboto', Arial, sans-serif;
+            background-color: #f4f7f6;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            padding: 30px 40px;
+            width: 90%;
+            max-width: 600px;
+            text-align: center;
+        }
+
+        h1 {
+            font-weight: 500;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        p {
+            font-weight: 300;
+            color: #555;
+            margin-bottom: 25px;
+        }
+
+        .botones {
+            display: flex;
+            gap: 15px; /* Espacio entre botones */
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        button {
+            font-family: 'Roboto', sans-serif;
+            font-size: 16px;
+            padding: 12px 24px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        #boton-grabar {
+            background-color: #2ecc71; /* Verde */
+            color: white;
+        }
+
+        #boton-grabar:hover {
+            background-color: #27ae60;
+            box-shadow: 0 6px 15px rgba(46, 204, 113, 0.3);
+        }
+
+        #boton-parar {
+            background-color: #e74c3c; /* Rojo */
+            color: white;
+        }
+
+        #boton-parar:hover {
+            background-color: #c0392b;
+            box-shadow: 0 6px 15px rgba(231, 76, 60, 0.3);
+        }
+
+        #estado {
+            font-weight: 500;
+            color: #3498db; /* Azul */
+            height: 20px; /* Altura fija para que no salte el diseño */
+            margin-bottom: 15px;
+            visibility: hidden; /* Oculto por defecto */
+        }
+
+        textarea {
+            width: 100%;
+            height: 200px;
+            border-radius: 8px;
+            border: 2px solid #dfe6e9;
+            padding: 15px;
+            font-family: 'Roboto', sans-serif;
+            font-size: 16px;
+            box-sizing: border-box; /* Para que el padding no afecte el ancho */
+            transition: border-color 0.3s ease;
+        }
+
+        textarea:focus {
+            border-color: #3498db;
+            outline: none;
+        }
     </style>
 </head>
 <body>
 
-    <h1>🎙️ Prueba de Dictado (Web Speech API)</h1>
-    <p>Presiona "Grabar" y habla. El texto aparecerá abajo.</p>
+    <div class="container">
+        <h1>🎙️ Dictado a Texto</h1>
+        <p>Presiona "Grabar" y habla. Tu transcripción aparecerá en el cuadro de texto.</p>
 
-    <button id="boton-grabar">Grabar</button>
-    <button id="boton-parar">Parar</button>
+        <div class="botones">
+            <button id="boton-grabar">▶️ Grabar</button>
+            <button id="boton-parar">⏹️ Parar</button>
+        </div>
 
-    <textarea id="resultado" placeholder="Aquí aparecerá tu transcripción..."></textarea>
+        <div id="estado">Escuchando...</div>
+
+        <textarea id="resultado" placeholder="Aquí aparecerá tu transcripción..."></textarea>
+    </div>
 
     <script>
         // 1. Verificar si el navegador soporta la API
@@ -27,48 +130,49 @@
             alert("Tu navegador no soporta la Web Speech API. Intenta con Chrome o Edge.");
         }
 
-        // 2. Crear una instancia de reconocimiento
+        // 2. Crear una instancia y obtener elementos del DOM
         const recognition = new SpeechRecognition();
         const textareaResultado = document.getElementById('resultado');
+        const estado = document.getElementById('estado');
 
         // 3. Configuración
         recognition.lang = 'es-AR'; // Español (Argentina)
-        recognition.interimResults = false; // No queremos resultados provisionales
-        recognition.continuous = true; // Sigue escuchando hasta que lo paremos
+        recognition.interimResults = false; 
+        recognition.continuous = true; 
 
-        // 4. Manejar el evento 'onresult' (cuando se detecta el habla)
+        // 4. Manejar el evento 'onresult'
         recognition.onresult = (event) => {
-            let transcripcion = '';
-            // Iteramos sobre los resultados (aunque con 'continuous' = false, usualmente solo hay 1)
-            for (const result of event.results) {
-                transcripcion += result[0].transcript;
+            let transcripcionCompleta = textareaResultado.value;
+            for (let i = event.resultIndex; i < event.results.length; ++i) {
+                if (event.results[i].isFinal) {
+                    transcripcionCompleta += event.results[i][0].transcript + '. ';
+                }
             }
-            
-            // Añadimos la transcripción al textarea
-            // Usamos .value en lugar de .innerText para textareas
-            textareaResultado.value += transcripcion + ' '; 
+            textareaResultado.value = transcripcionCompleta;
         };
 
         // 5. Manejar errores
         recognition.onerror = (event) => {
             console.error('Error en el reconocimiento de voz:', event.error);
-            alert('Error: ' + event.error);
         };
 
         // 6. Asignar funciones a los botones
         document.getElementById('boton-grabar').addEventListener('click', () => {
             recognition.start();
+            estado.style.visibility = 'visible'; // Muestra "Escuchando..."
             console.log('Grabación iniciada...');
         });
 
         document.getElementById('boton-parar').addEventListener('click', () => {
             recognition.stop();
+            estado.style.visibility = 'hidden'; // Oculta "Escuchando..."
             console.log('Grabación detenida.');
         });
-
-        // 7. (Opcional) Reiniciar cuando se detiene para que siempre esté escuchando
+        
+        // 7. Limpiar el estado cuando el reconocimiento termina
         recognition.onend = () => {
-            console.log('El reconocimiento se detuvo. (Si no fue manual, se reiniciará si continuous=true)');
+            estado.style.visibility = 'hidden';
+            console.log('El reconocimiento se detuvo.');
         };
 
     </script>
