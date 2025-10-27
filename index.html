@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prueba de Web Speech API</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        textarea { width: 100%; height: 150px; margin-top: 10px; }
+        button { padding: 10px; font-size: 16px; margin: 5px; }
+    </style>
+</head>
+<body>
+
+    <h1>🎙️ Prueba de Dictado (Web Speech API)</h1>
+    <p>Presiona "Grabar" y habla. El texto aparecerá abajo.</p>
+
+    <button id="boton-grabar">Grabar</button>
+    <button id="boton-parar">Parar</button>
+
+    <textarea id="resultado" placeholder="Aquí aparecerá tu transcripción..."></textarea>
+
+    <script>
+        // 1. Verificar si el navegador soporta la API
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+            alert("Tu navegador no soporta la Web Speech API. Intenta con Chrome o Edge.");
+        }
+
+        // 2. Crear una instancia de reconocimiento
+        const recognition = new SpeechRecognition();
+        const textareaResultado = document.getElementById('resultado');
+
+        // 3. Configuración
+        recognition.lang = 'es-AR'; // Español (Argentina)
+        recognition.interimResults = false; // No queremos resultados provisionales
+        recognition.continuous = true; // Sigue escuchando hasta que lo paremos
+
+        // 4. Manejar el evento 'onresult' (cuando se detecta el habla)
+        recognition.onresult = (event) => {
+            let transcripcion = '';
+            // Iteramos sobre los resultados (aunque con 'continuous' = false, usualmente solo hay 1)
+            for (const result of event.results) {
+                transcripcion += result[0].transcript;
+            }
+            
+            // Añadimos la transcripción al textarea
+            // Usamos .value en lugar de .innerText para textareas
+            textareaResultado.value += transcripcion + ' '; 
+        };
+
+        // 5. Manejar errores
+        recognition.onerror = (event) => {
+            console.error('Error en el reconocimiento de voz:', event.error);
+            alert('Error: ' + event.error);
+        };
+
+        // 6. Asignar funciones a los botones
+        document.getElementById('boton-grabar').addEventListener('click', () => {
+            recognition.start();
+            console.log('Grabación iniciada...');
+        });
+
+        document.getElementById('boton-parar').addEventListener('click', () => {
+            recognition.stop();
+            console.log('Grabación detenida.');
+        });
+
+        // 7. (Opcional) Reiniciar cuando se detiene para que siempre esté escuchando
+        recognition.onend = () => {
+            console.log('El reconocimiento se detuvo. (Si no fue manual, se reiniciará si continuous=true)');
+        };
+
+    </script>
+
+</body>
+</html>
